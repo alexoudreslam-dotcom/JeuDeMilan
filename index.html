@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Buck Crew Preview</title>
+    <link rel="stylesheet" href="./src/app/globals.css" />
+    <style>
+      body { font-family: ui-monospace, Menlo, Consolas, monospace; }
+      .preview-note {
+        position: fixed;
+        left: 12px;
+        top: 12px;
+        z-index: 50;
+        max-width: 280px;
+        padding: 10px 12px;
+        background: #ffe0a6;
+        color: #21140d;
+        border: 4px solid #120a07;
+        box-shadow: 5px 5px 0 #000;
+        font-size: 10px;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="preview-note">Preview statique temporaire. La vraie app Next est dans src/.</div>
+    <main class="phone-shell">
+      <section class="screen hub-screen">
+        <header class="hud">
+          <div class="hud-cell"><span class="pixel-icon star"><i>★</i></span><strong>1,250</strong></div>
+          <div class="hud-cell hud-wide"><span class="pixel-icon calendar"><i>▣</i></span><span>Score<br />semaine</span></div>
+          <div class="hud-cell"><span class="pixel-icon drumstick"><i>◖</i></span><strong>84</strong></div>
+          <div class="hud-cell heart-cell"><span class="heart"></span><span class="heart"></span><span class="heart"></span><small>Tentatives</small></div>
+        </header>
+
+        <nav class="route-map" aria-label="Plan du restaurant">
+          <button><span>▤</span><small>Frigo</small><i></i></button>
+          <button><span>◉</span><small>Compo</small><i></i></button>
+          <button><span>▥</span><small>Cuisine</small><i></i></button>
+          <button><span>▣</span><small>Comptoir</small><i></i></button>
+          <button class="active"><span>⌖</span><small>Salle</small><i></i></button>
+          <button><span>▯</span><small>Entree</small></button>
+        </nav>
+
+        <section class="restaurant">
+          <div class="kitchen-wall"></div>
+          <div class="room-wall"></div>
+          <div class="kitchen-floor"></div>
+          <div class="room-floor"></div>
+          <div class="divider"></div>
+          <div class="poster"><span class="pixel-icon drumstick"><i>◖</i></span></div>
+          <button class="hotspot fridge"><span>▤</span></button>
+          <button class="hotspot prep"><span>◉</span></button>
+          <button class="hotspot music"><span>♪</span></button>
+          <button class="hotspot talk"><span>…</span></button>
+          <div class="fridge-sprite"><span></span><span></span><span></span></div>
+          <div class="prep-sprite"><span></span></div>
+          <div class="jukebox-sprite"><span></span></div>
+          <div class="cash-sprite"><span></span></div>
+          <div class="table-sprite"><span></span></div>
+          <div class="customer-sprite"></div>
+          <div class="player-position" style="--player-x: 178px; --player-y: 386px;">
+            <div class="avatar avatar-stage" style="--skin:#c98a58;--hair:#a94725;--shirt:#f1eee2;--apron:#e3a92f;">
+              <span class="hair"></span>
+              <span class="head"></span>
+              <span class="body"></span>
+              <span class="apron"></span>
+              <span class="leg leg-left"></span>
+              <span class="leg leg-right"></span>
+            </div>
+          </div>
+        </section>
+
+        <div class="controls">
+          <div class="joystick">
+            <span></span>
+          </div>
+          <button
+            class="debug-reset-button"
+            type="button"
+            onclick="localStorage.removeItem('buck-crew-next'); location.reload();"
+          >
+            Reset flow
+          </button>
+          <button class="action-button" aria-label="Action">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 11.5V9a2 2 0 0 0-4 0v2" />
+              <path d="M14 10V8a2 2 0 0 0-4 0v4" />
+              <path d="M10 10.5V6a2 2 0 0 0-4 0v9" />
+              <path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2a8 8 0 0 1-8-8v-3" />
+            </svg>
+          </button>
+        </div>
+      </section>
+    </main>
+    <script>
+      const restaurant = document.querySelector(".restaurant");
+      const player = document.querySelector(".player-position");
+      const joystick = document.querySelector(".joystick");
+      const knob = document.querySelector(".joystick span");
+      const direction = { x: 0, y: 0 };
+      const position = { x: 178, y: 386 };
+      let activePointer = null;
+      let origin = { x: 0, y: 0 };
+      let lastTime = performance.now();
+
+      function clampToFloor(next) {
+        const width = restaurant.clientWidth;
+        const height = restaurant.clientHeight;
+        return {
+          x: Math.min(width - 42, Math.max(42, next.x)),
+          y: Math.min(height - 12, Math.max(height * 0.61, next.y))
+        };
+      }
+
+      function placePlayer() {
+        const next = clampToFloor(position);
+        position.x = next.x;
+        position.y = next.y;
+        player.style.setProperty("--player-x", `${position.x}px`);
+        player.style.setProperty("--player-y", `${position.y}px`);
+      }
+
+      function updateJoystick(clientX, clientY) {
+        const mx = clientX - origin.x;
+        const my = clientY - origin.y;
+        const length = Math.max(1, Math.hypot(mx, my));
+        const limit = Math.min(34, length);
+        direction.x = mx / length;
+        direction.y = my / length;
+        knob.style.transform = `translate(${direction.x * limit}px, ${direction.y * limit}px)`;
+      }
+
+      joystick.addEventListener("pointerdown", (event) => {
+        activePointer = event.pointerId;
+        joystick.setPointerCapture(activePointer);
+        const rect = joystick.getBoundingClientRect();
+        origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        updateJoystick(event.clientX, event.clientY);
+      });
+
+      joystick.addEventListener("pointermove", (event) => {
+        if (event.pointerId !== activePointer) return;
+        updateJoystick(event.clientX, event.clientY);
+      });
+
+      function releaseJoystick() {
+        activePointer = null;
+        direction.x = 0;
+        direction.y = 0;
+        knob.style.transform = "translate(0, 0)";
+      }
+
+      joystick.addEventListener("pointerup", releaseJoystick);
+      joystick.addEventListener("pointercancel", releaseJoystick);
+
+      function tick(time) {
+        const delta = Math.min(0.04, (time - lastTime) / 1000);
+        lastTime = time;
+        if (direction.x || direction.y) {
+          position.x += direction.x * 140 * delta;
+          position.y += direction.y * 140 * delta;
+          placePlayer();
+        }
+        requestAnimationFrame(tick);
+      }
+
+      window.addEventListener("resize", placePlayer);
+      placePlayer();
+      requestAnimationFrame(tick);
+    </script>
+  </body>
+</html>

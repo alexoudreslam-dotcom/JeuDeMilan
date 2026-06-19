@@ -6,6 +6,11 @@
 
 # Dependencies and build outputs
 node_modules/
+.next/
 dist/
 build/
 
+# Local caches and generated files
+.swift-module-cache/
+.tools/
+*.tsbuildinfo

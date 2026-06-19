@@ -234,15 +234,14 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(4px, 1.8vw, 10px);
-  translate: -50% 0;
+  gap: clamp(3px, 1.2vw, 7px);
   padding: 5px 10px 8px;
   color: #ff4b25;
-  font-size: clamp(31px, 9.8vw, 54px);
+  font-size: clamp(28px, 8.6vw, 48px);
   line-height: 0.92;
   text-align: center;
   text-transform: none;
-  transform: rotate(-1deg);
+  transform: translateX(-50%) rotate(-1deg);
   text-shadow:
     0 6px 0 #0b0503,
     5px 5px 0 #0b0503,
@@ -298,7 +297,7 @@ button {
   display: grid;
   justify-items: center;
   gap: 1px;
-  translate: -50% 0;
+  transform: translateX(-50%);
   text-align: center;
   text-transform: uppercase;
 }
@@ -316,7 +315,8 @@ button {
 
 .poster-title strong {
   color: #ffe6bd;
-  font-size: clamp(42px, 13vw, 67px);
+  font-size: clamp(40px, 12vw, 62px);
+  word-spacing: -0.22em;
 }
 
 .poster-title em {

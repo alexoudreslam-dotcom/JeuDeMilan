@@ -226,43 +226,25 @@ button {
 
 .poster-logo {
   position: absolute;
-  top: clamp(12px, 2svh, 22px);
+  top: clamp(14px, 2.2svh, 24px);
   left: 50%;
   z-index: 6;
-  width: min(94%, 405px);
-  min-height: clamp(72px, 11svh, 100px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(0px, 0.45vw, 3px);
-  padding: 2px 8px 10px;
-  color: #ff4b25;
-  font-size: clamp(34px, 10.4vw, 58px);
-  line-height: 0.82;
-  text-align: center;
-  text-transform: none;
-  transform: translateX(-50%) rotate(-1.5deg) skewX(-4deg);
-  text-shadow:
-    0 2px 0 #ff8a3d,
-    0 7px 0 #090402,
-    5px 6px 0 #090402,
-    -5px 6px 0 #090402,
-    5px 1px 0 #090402,
-    -5px 1px 0 #090402,
-    0 -5px 0 #090402,
-    3px -4px 0 #090402,
-    -3px -4px 0 #090402,
-    8px 10px 0 rgba(0, 0, 0, 0.52);
+  width: min(94%, 390px);
+  transform: translateX(-50%) rotate(-1deg);
+  filter:
+    drop-shadow(0 8px 0 #090402)
+    drop-shadow(5px 6px 0 rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 12px rgba(255, 82, 36, 0.22));
 }
 
 .poster-logo::before {
   content: "";
   position: absolute;
-  left: 7%;
-  right: 7%;
-  top: 54%;
+  left: 5%;
+  right: 5%;
+  top: 62%;
   z-index: -1;
-  height: 22px;
+  height: 18px;
   background: rgba(8, 4, 2, 0.62);
   box-shadow:
     -12px 8px 0 rgba(8, 4, 2, 0.48),
@@ -270,36 +252,11 @@ button {
   transform: skewX(-12deg);
 }
 
-.poster-logo .logo-word,
-.poster-logo i {
-  display: inline-block;
-  position: relative;
-  font-style: normal;
-  paint-order: stroke fill;
-  -webkit-text-stroke: 2px #120704;
-}
-
-.poster-logo .logo-buck {
-  margin-right: -0.06em;
-  transform: translateY(-1px) rotate(-2deg);
-}
-
-.poster-logo .logo-buck::first-letter,
-.poster-logo .logo-more::first-letter {
-  font-size: 1.18em;
-  color: #ff381d;
-}
-
-.poster-logo .logo-more {
-  margin-left: -0.08em;
-  transform: translateY(4px) rotate(1deg);
-}
-
-.poster-logo i {
-  color: #ff6b32;
-  margin-inline: -0.05em;
-  font-size: 0.76em;
-  transform: translateY(-4px) rotate(4deg);
+.poster-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
 }
 
 .poster-title {

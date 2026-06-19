@@ -965,9 +965,7 @@ export function GamePrototype() {
           <Frame step={1} title="Accueil" className="welcome-frame" key="welcome">
             <div className="store-scene">
               <div className="poster-logo">
-                <span className="logo-word logo-buck">Buck</span>
-                <i>&amp;</i>
-                <span className="logo-word logo-more">More</span>
+                <img src="/assets/buck-and-more-logo-pixel.png" alt="Buck & More" />
               </div>
               <div className="poster-title" aria-label="Wake up to ketchup">
                 <strong><span>Wake</span><span>up</span></strong>

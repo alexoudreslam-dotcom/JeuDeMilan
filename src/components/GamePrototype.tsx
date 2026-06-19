@@ -237,9 +237,9 @@ const hubHotspots: HubHotspot[] = [
 
 function readPlayer(): PlayerState {
   if (typeof window === "undefined") return defaultPlayer;
-  const raw = window.localStorage.getItem("buck-crew-next");
-  if (!raw) return defaultPlayer;
   try {
+    const raw = window.localStorage.getItem("buck-crew-next");
+    if (!raw) return defaultPlayer;
     const parsed = JSON.parse(raw);
     return migratePlayer(parsed);
   } catch {
@@ -248,6 +248,7 @@ function readPlayer(): PlayerState {
 }
 
 function migratePlayer(parsed: Partial<PlayerState> & { score?: number; nuggets?: number; attempts?: number }): PlayerState {
+  if (!parsed || typeof parsed !== "object") return defaultPlayer;
   const legacyScore = typeof parsed.score === "number" ? parsed.score : 0;
   const legacyTotal = Math.min(450, Math.max(0, legacyScore));
   const legacyStats: PlayerStats = {
@@ -309,11 +310,11 @@ function getNextSaturdayLabel() {
 }
 
 function getWeeklyScore(player: PlayerState) {
-  return statOrder.reduce((total, key) => total + (player.weeklyStats[key] || 0), 0);
+  return statOrder.reduce((total, key) => total + (player.weeklyStats?.[key] || 0), 0);
 }
 
 function isGameDoneToday(player: PlayerState, game: GameKey, today = getTodayKey()) {
-  return player.dailyAttempts[game] === today;
+  return player.dailyAttempts?.[game] === today;
 }
 
 function areAllGamesDoneToday(player: PlayerState, today = getTodayKey()) {
@@ -328,16 +329,21 @@ function formatStatGains(gains: Partial<PlayerStats>) {
 }
 
 function applyStatGains(stats: PlayerStats, gains: Partial<PlayerStats>): PlayerStats {
+  const currentStats = { ...defaultPlayer.weeklyStats, ...(stats || {}) };
   return {
-    ...stats,
+    ...currentStats,
     ...Object.fromEntries(
-      statOrder.map((key) => [key, Math.min(999, (stats[key] || 0) + (gains[key] || 0))])
+      statOrder.map((key) => [key, Math.min(999, (currentStats[key] || 0) + (gains[key] || 0))])
     )
   } as PlayerStats;
 }
 
 function savePlayer(player: PlayerState) {
-  window.localStorage.setItem("buck-crew-next", JSON.stringify(player));
+  try {
+    window.localStorage.setItem("buck-crew-next", JSON.stringify(player));
+  } catch {
+    // Keep the game playable when storage is blocked or full.
+  }
 }
 
 function freshPlayer(): PlayerState {
@@ -823,7 +829,11 @@ export function GamePrototype() {
   }
 
   function resetUserFlow() {
-    window.localStorage.removeItem("buck-crew-next");
+    try {
+      window.localStorage.removeItem("buck-crew-next");
+    } catch {
+      // Storage may be unavailable in private or restricted browsing modes.
+    }
     setSelectedGame("plating");
     setBlockedGame(null);
     setToast("");

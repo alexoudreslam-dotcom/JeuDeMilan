@@ -965,13 +965,13 @@ export function GamePrototype() {
           <Frame step={1} title="Accueil" className="welcome-frame" key="welcome">
             <div className="store-scene">
               <div className="poster-logo">
-                <span>Buck</span>
+                <span className="logo-word logo-buck">Buck</span>
                 <i>&amp;</i>
-                <span>More</span>
+                <span className="logo-word logo-more">More</span>
               </div>
               <div className="poster-title" aria-label="Wake up to ketchup">
-                <strong>Wake up</strong>
-                <span><i />to<i /></span>
+                <strong><span>Wake</span><span>up</span></strong>
+                <small><i />to<i /></small>
                 <em>Ketchup</em>
               </div>
               <div className="poster-food food-salad"><span /></div>

@@ -2,12 +2,13 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useDrag } from "@use-gesture/react";
-import { ChevronLeft, ChevronRight, Hand, Trophy } from "lucide-react";
+import { BarChart3, ChevronLeft, ChevronRight, Crown, Gift, Hand, Home, Medal, Trophy } from "lucide-react";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type Screen = "welcome" | "name" | "rules" | "avatar" | "hub" | "intro" | "score";
+type Screen = "welcome" | "name" | "rules" | "avatar" | "hub" | "intro" | "score" | "leaderboard" | "reward" | "hallOfFame" | "profile";
 type GameKey = "fridge" | "plating" | "jukebox" | "order";
+type StatKey = "organisation" | "sympathie" | "rapidite" | "precision" | "ambiance";
 
 type AvatarState = {
   skin: string;
@@ -21,12 +22,23 @@ type AvatarState = {
 
 type PlayerState = {
   name: string;
-  score: number;
-  nuggets: number;
-  attempts: number;
   avatar: AvatarState;
+  weeklyStats: PlayerStats;
+  history: PlayerHistory;
+  dailyAttempts: DailyAttempts;
   seenTutorials: Record<string, boolean>;
   lastGame?: GameKey;
+};
+
+type PlayerStats = Record<StatKey, number>;
+
+type DailyAttempts = Record<GameKey, string>;
+
+type PlayerHistory = {
+  weeksPlayed: number;
+  victories: number;
+  totalGamesPlayed: number;
+  rewardsClaimed: number;
 };
 
 type Direction = {
@@ -58,9 +70,6 @@ type HubHotspot = {
 
 const defaultPlayer: PlayerState = {
   name: "",
-  score: 1250,
-  nuggets: 84,
-  attempts: 3,
   avatar: {
     skin: "#c98a58",
     hair: "#a94725",
@@ -70,6 +79,25 @@ const defaultPlayer: PlayerState = {
     accessory: "none",
     badge: "none"
   },
+  weeklyStats: {
+    organisation: 0,
+    sympathie: 0,
+    rapidite: 0,
+    precision: 0,
+    ambiance: 0
+  },
+  history: {
+    weeksPlayed: 1,
+    victories: 0,
+    totalGamesPlayed: 0,
+    rewardsClaimed: 0
+  },
+  dailyAttempts: {
+    fridge: "",
+    plating: "",
+    jukebox: "",
+    order: ""
+  },
   seenTutorials: {}
 };
 
@@ -78,8 +106,7 @@ const games: Record<
   {
     title: string;
     label: string;
-    stat: string;
-    score: number;
+    statGains: Partial<PlayerStats>;
     icon: string;
     steps: [string, string, string];
   }
@@ -87,32 +114,28 @@ const games: Record<
   fridge: {
     title: "Frigo",
     label: "FRIGO",
-    stat: "Organisation",
-    score: 130,
+    statGains: { organisation: 25 },
     icon: "▤",
     steps: ["Repere l'intrus", "Range les bons produits", "Garde le frigo clean"]
   },
   plating: {
     title: "Plating",
     label: "COMPO",
-    stat: "Precision",
-    score: 180,
+    statGains: { rapidite: 15, precision: 15 },
     icon: "◉",
     steps: ["Lis le ticket", "Glisse les bons items", "Evite les leurres"]
   },
   jukebox: {
     title: "Jukebox",
     label: "MUSIQUE",
-    stat: "Ambiance",
-    score: 95,
+    statGains: { ambiance: 25 },
     icon: "♪",
     steps: ["Observe la salle", "Choisis le bon mood", "Garde les clients contents"]
   },
   order: {
     title: "Commande",
     label: "CLIENT",
-    stat: "Service",
-    score: 115,
+    statGains: { sympathie: 25 },
     icon: "…",
     steps: ["Ecoute le client", "Verifie sa fiche", "Conseille sans erreur"]
   }
@@ -153,12 +176,28 @@ const optionLabels: Record<string, string> = {
   nugget: "Nugget"
 };
 
+const statLabels: Record<StatKey, string> = {
+  organisation: "Organisation",
+  sympathie: "Sympathie",
+  rapidite: "Rapidite",
+  precision: "Precision",
+  ambiance: "Ambiance"
+};
+
+const statOrder: StatKey[] = ["organisation", "sympathie", "rapidite", "precision", "ambiance"];
+
 const ranks = [
-  ["CrisPy", 2450],
-  ["FriteKing", 2100],
-  ["NuggLife", 1780],
-  ["WingBoss", 1250]
-] as const;
+  { name: "CrispyKing", score: 428, avatar: { ...defaultPlayer.avatar, hair: "#d7a33b", apron: "#cf5734", badge: "star" } },
+  { name: "NuggetBoss", score: 391, avatar: { ...defaultPlayer.avatar, skin: "#f2c996", hair: "#24201d", apron: "#e3a92f", badge: "nugget" } },
+  { name: "KetchupMaster", score: 372, avatar: { ...defaultPlayer.avatar, skin: "#8c5635", hair: "#a94725", apron: "#c4432d", badge: "burger" } },
+  { name: "SauceRunner", score: 336, avatar: { ...defaultPlayer.avatar, shirt: "#334e9b", apron: "#7aab3f", accessory: "headphones" } }
+];
+
+const hallOfFameEntries = [
+  { week: 24, champion: "CrispyKing", prize: "Baby Burger" },
+  { week: 25, champion: "NuggetBoss", prize: "Baby Burger" },
+  { week: 26, champion: "KetchupMaster", prize: "Baby Burger" }
+];
 
 const hubHotspots: HubHotspot[] = [
   {
@@ -202,17 +241,99 @@ function readPlayer(): PlayerState {
   if (!raw) return defaultPlayer;
   try {
     const parsed = JSON.parse(raw);
-    return {
-      ...defaultPlayer,
-      ...parsed,
-      avatar: {
-        ...defaultPlayer.avatar,
-        ...(parsed.avatar || {})
-      }
-    };
+    return migratePlayer(parsed);
   } catch {
     return defaultPlayer;
   }
+}
+
+function migratePlayer(parsed: Partial<PlayerState> & { score?: number; nuggets?: number; attempts?: number }): PlayerState {
+  const legacyScore = typeof parsed.score === "number" ? parsed.score : 0;
+  const legacyTotal = Math.min(450, Math.max(0, legacyScore));
+  const legacyStats: PlayerStats = {
+    organisation: Math.round(legacyTotal * 0.24),
+    sympathie: Math.round(legacyTotal * 0.22),
+    rapidite: Math.round(legacyTotal * 0.18),
+    precision: Math.round(legacyTotal * 0.2),
+    ambiance: Math.round(legacyTotal * 0.16)
+  };
+
+  return {
+    ...defaultPlayer,
+    ...parsed,
+    name: parsed.name || "",
+    avatar: {
+      ...defaultPlayer.avatar,
+      ...(parsed.avatar || {})
+    },
+    weeklyStats: {
+      ...(parsed.weeklyStats ? defaultPlayer.weeklyStats : legacyStats),
+      ...(parsed.weeklyStats || {})
+    },
+    history: {
+      ...defaultPlayer.history,
+      ...(parsed.history || {}),
+      totalGamesPlayed: parsed.history?.totalGamesPlayed ?? (parsed.lastGame ? 1 : 0)
+    },
+    dailyAttempts: {
+      ...defaultPlayer.dailyAttempts,
+      ...(parsed.dailyAttempts || {})
+    },
+    seenTutorials: {
+      ...(parsed.seenTutorials || {})
+    },
+    lastGame: parsed.lastGame
+  };
+}
+
+function getTodayKey() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getNextSaturdayLabel() {
+  const now = new Date();
+  const target = new Date(now);
+  const daysUntilSaturday = (6 - now.getDay() + 7) % 7;
+  target.setDate(now.getDate() + daysUntilSaturday);
+  target.setHours(18, 0, 0, 0);
+  if (target.getTime() <= now.getTime()) target.setDate(target.getDate() + 7);
+  const diff = target.getTime() - now.getTime();
+  const days = Math.floor(diff / 86_400_000);
+  const hours = Math.max(0, Math.ceil((diff % 86_400_000) / 3_600_000));
+  if (days <= 0) return `${hours}h`;
+  return `${days}j ${hours}h`;
+}
+
+function getWeeklyScore(player: PlayerState) {
+  return statOrder.reduce((total, key) => total + (player.weeklyStats[key] || 0), 0);
+}
+
+function isGameDoneToday(player: PlayerState, game: GameKey, today = getTodayKey()) {
+  return player.dailyAttempts[game] === today;
+}
+
+function areAllGamesDoneToday(player: PlayerState, today = getTodayKey()) {
+  return (Object.keys(games) as GameKey[]).every((game) => isGameDoneToday(player, game, today));
+}
+
+function formatStatGains(gains: Partial<PlayerStats>) {
+  return statOrder
+    .filter((key) => gains[key])
+    .map((key) => `+${gains[key]} ${statLabels[key]}`)
+    .join(" / ");
+}
+
+function applyStatGains(stats: PlayerStats, gains: Partial<PlayerStats>): PlayerStats {
+  return {
+    ...stats,
+    ...Object.fromEntries(
+      statOrder.map((key) => [key, Math.min(999, (stats[key] || 0) + (gains[key] || 0))])
+    )
+  } as PlayerStats;
 }
 
 function savePlayer(player: PlayerState) {
@@ -222,7 +343,12 @@ function savePlayer(player: PlayerState) {
 function freshPlayer(): PlayerState {
   return {
     ...defaultPlayer,
-    avatar: { ...defaultPlayer.avatar },
+      avatar: {
+        ...defaultPlayer.avatar
+      },
+    weeklyStats: { ...defaultPlayer.weeklyStats },
+    history: { ...defaultPlayer.history },
+    dailyAttempts: { ...defaultPlayer.dailyAttempts },
     seenTutorials: {}
   };
 }
@@ -569,27 +695,28 @@ function MainButton({
   );
 }
 
-function Hud({ player }: { player: PlayerState }) {
+function Hud({ player, onNavigate }: { player: PlayerState; onNavigate: (screen: Screen) => void }) {
+  const weeklyScore = getWeeklyScore(player);
+  const doneToday = (Object.keys(games) as GameKey[]).filter((game) => isGameDoneToday(player, game)).length;
+
   return (
     <header className="hud">
-      <div className="hud-cell">
+      <button className="hud-cell" onClick={() => onNavigate("profile")} type="button">
         <PixelIcon type="star">★</PixelIcon>
-        <strong>{player.score.toLocaleString("fr-FR")}</strong>
-      </div>
-      <div className="hud-cell hud-wide">
+        <strong>{weeklyScore.toLocaleString("fr-FR")}</strong>
+      </button>
+      <button className="hud-cell hud-wide" onClick={() => onNavigate("leaderboard")} type="button">
         <PixelIcon type="calendar">▣</PixelIcon>
-        <span>Score<br />semaine</span>
-      </div>
-      <div className="hud-cell">
-        <PixelIcon type="drumstick">◖</PixelIcon>
-        <strong>{player.nuggets}</strong>
-      </div>
-      <div className="hud-cell heart-cell">
-        <span className="heart" />
-        <span className="heart" />
-        <span className="heart" />
-        <small>Tentatives</small>
-      </div>
+        <span>Classement<br />semaine</span>
+      </button>
+      <button className="hud-cell" onClick={() => onNavigate("reward")} type="button">
+        <Gift size={30} />
+        <strong>Samedi</strong>
+      </button>
+      <button className="hud-cell heart-cell" onClick={() => onNavigate("hallOfFame")} type="button">
+        <span>{doneToday}/4</span>
+        <small>Defis jour</small>
+      </button>
     </header>
   );
 }
@@ -644,6 +771,35 @@ function Joystick({ onMove, onRelease }: { onMove: (direction: Direction) => voi
   );
 }
 
+function StatBars({ stats }: { stats: PlayerStats }) {
+  return (
+    <div className="stats-list">
+      {statOrder.map((key) => {
+        const value = stats[key] || 0;
+        const filled = Math.min(10, Math.round(value / 10));
+        return (
+          <div className="stat-row" key={key}>
+            <span>{statLabels[key]}</span>
+            <i aria-hidden="true">{"█".repeat(filled)}{"░".repeat(10 - filled)}</i>
+            <b>{value}</b>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function MetaNav({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
+  return (
+    <div className="meta-nav">
+      <button onClick={() => onNavigate("hub")} type="button"><Home size={18} />Resto</button>
+      <button onClick={() => onNavigate("leaderboard")} type="button"><Trophy size={18} />Classement</button>
+      <button onClick={() => onNavigate("profile")} type="button"><BarChart3 size={18} />Profil</button>
+      <button onClick={() => onNavigate("reward")} type="button"><Gift size={18} />Samedi</button>
+    </div>
+  );
+}
+
 export function GamePrototype() {
   const stageRef = useRef<HTMLElement | null>(null);
   const directionRef = useRef<Direction>({ x: 0, y: 0 });
@@ -652,6 +808,8 @@ export function GamePrototype() {
   const [selectedGame, setSelectedGame] = useState<GameKey>("plating");
   const [playerPosition, setPlayerPosition] = useState<StagePosition>({ x: 178, y: 386 });
   const [stageSize, setStageSize] = useState<StageSize>({ width: 0, height: 0 });
+  const [toast, setToast] = useState("");
+  const [blockedGame, setBlockedGame] = useState<GameKey | null>(null);
 
   // Hydrate from localStorage after mount to avoid SSR mismatch
   useEffect(() => {
@@ -668,6 +826,8 @@ export function GamePrototype() {
   function resetUserFlow() {
     window.localStorage.removeItem("buck-crew-next");
     setSelectedGame("plating");
+    setBlockedGame(null);
+    setToast("");
     setPlayer(freshPlayer());
     setScreen("welcome");
   }
@@ -684,6 +844,14 @@ export function GamePrototype() {
   }
 
   function chooseGame(game: GameKey) {
+    if (isGameDoneToday(player, game)) {
+      setSelectedGame(game);
+      setBlockedGame(game);
+      setToast("Defi deja termine aujourd'hui.");
+      window.setTimeout(() => setToast(""), 2400);
+      return;
+    }
+    setBlockedGame(null);
     setSelectedGame(game);
     setScreen("intro");
   }
@@ -710,9 +878,29 @@ export function GamePrototype() {
   }, [playerPosition.x, stageSize.width]);
 
   const leaderboard = useMemo(() => {
-    const rows = [...ranks, [player.name || "PouletMaster", player.score] as const].sort((a, b) => b[1] - a[1]);
-    return rows.slice(0, 5);
-  }, [player.name, player.score]);
+    const current = {
+      name: player.name || "PouletMaster",
+      score: getWeeklyScore(player),
+      avatar: player.avatar,
+      isCurrent: true
+    };
+    return [...ranks.map((rank) => ({ ...rank, isCurrent: false })), current]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6);
+  }, [player]);
+
+  const currentRank = useMemo(() => {
+    const rows = [...ranks.map((rank) => ({ ...rank, isCurrent: false })), {
+      name: player.name || "PouletMaster",
+      score: getWeeklyScore(player),
+      avatar: player.avatar,
+      isCurrent: true
+    }].sort((a, b) => b.score - a.score);
+    return rows.findIndex((row) => row.isCurrent) + 1;
+  }, [player]);
+
+  const isChampion = currentRank === 1;
+  const allDoneToday = areAllGamesDoneToday(player);
 
   useEffect(() => {
     if (screen !== "hub" || !stageRef.current) return;
@@ -801,10 +989,10 @@ export function GamePrototype() {
               <input id="name" name="name" maxLength={14} defaultValue={player.name || "PouletMaster"} />
               <div className="leader-card">
                 <h2>Meilleurs joueurs (semaine)</h2>
-                {ranks.slice(0, 3).map(([name, score], index) => (
-                  <p key={name}>
-                    <span>{index + 1} {name}</span>
-                    <b>★ {score.toLocaleString("fr-FR")}</b>
+                {ranks.slice(0, 3).map((rank, index) => (
+                  <p key={rank.name}>
+                    <span>{index + 1} {rank.name}</span>
+                    <b>★ {rank.score.toLocaleString("fr-FR")}</b>
                   </p>
                 ))}
               </div>
@@ -817,8 +1005,8 @@ export function GamePrototype() {
           <Frame step={3} title="Regles" key="rules">
             <div className="rules-grid">
               <article><PixelIcon type="drumstick">◖</PixelIcon><strong>Joue</strong><span>des mini-jeux</span></article>
-              <article><PixelIcon type="star">★</PixelIcon><strong>Ameliore</strong><span>ton score semaine</span></article>
-              <article><Trophy size={54} /><strong>Samedi</strong><span>le gagnant repart avec une recompense</span></article>
+              <article><PixelIcon type="star">★</PixelIcon><strong>Stats</strong><span>monte ton score semaine</span></article>
+              <article><Trophy size={54} /><strong>Samedi</strong><span>le premier gagne 1 Baby Burger</span></article>
             </div>
             <MainButton className="blue-button" onClick={() => setScreen("avatar")}>J'ai compris</MainButton>
           </Frame>
@@ -883,25 +1071,41 @@ export function GamePrototype() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.22 }}
           >
-            <Hud player={player} />
+            <Hud player={player} onNavigate={setScreen} />
             <RouteMap />
             <section className="restaurant" ref={stageRef}>
+              {toast && <motion.div className="toast" initial={{ y: -12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ opacity: 0 }}>{toast}</motion.div>}
+              {allDoneToday && (
+                <div className="daily-complete-panel">
+                  <strong>Tous tes defis du jour sont termines.</strong>
+                  <span>Score semaine : {getWeeklyScore(player).toLocaleString("fr-FR")} · Rang #{currentRank}</span>
+                  <small>Samedi dans {getNextSaturdayLabel()}</small>
+                </div>
+              )}
+              {blockedGame && !allDoneToday && (
+                <div className="daily-complete-panel blocked-panel">
+                  <strong>Defi deja termine aujourd'hui.</strong>
+                  <span>{games[blockedGame].title} est verrouille pour la journee.</span>
+                  <small>Reviens demain pour rejouer.</small>
+                </div>
+              )}
               {hubHotspots.map((hotspot) => {
                 const isNear = activeHotspot?.key === hotspot.key;
+                const isDone = isGameDoneToday(player, hotspot.game);
 
                 return (
                   <button
-                    className={`hotspot ${hotspot.className} ${isNear ? "is-near" : ""}`}
+                    className={`hotspot ${hotspot.className} ${isNear ? "is-near" : ""} ${isDone ? "is-done" : "is-available"}`}
                     key={hotspot.key}
                     type="button"
-                    aria-label={isNear ? `${hotspot.label} disponible` : `Approche-toi pour ${hotspot.label.toLowerCase()}`}
+                    aria-label={isDone ? `${hotspot.label} deja termine aujourd'hui` : isNear ? `${hotspot.label} disponible` : `Approche-toi pour ${hotspot.label.toLowerCase()}`}
                     aria-pressed={isNear}
                     onClick={() => {
                       if (isNear) chooseGame(hotspot.game);
                     }}
                   >
                     <span className="hotspot-icon">{hotspot.icon}</span>
-                    <span className="hotspot-label">{hotspot.label}</span>
+                    <span className="hotspot-label">{isDone ? "Termine aujourd'hui" : hotspot.label}</span>
                   </button>
                 );
               })}
@@ -955,15 +1159,24 @@ export function GamePrototype() {
             </div>
             <MainButton
               onClick={() => {
-                const gained = currentGame.score;
+                const today = getTodayKey();
+                const gainedLabel = formatStatGains(currentGame.statGains);
                 updatePlayer({
                   ...player,
-                  score: player.score + gained,
-                  nuggets: player.nuggets + 5,
-                  attempts: Math.max(0, player.attempts - 1),
+                  weeklyStats: applyStatGains(player.weeklyStats, currentGame.statGains),
+                  history: {
+                    ...player.history,
+                    totalGamesPlayed: player.history.totalGamesPlayed + 1
+                  },
+                  dailyAttempts: {
+                    ...player.dailyAttempts,
+                    [selectedGame]: today
+                  },
                   seenTutorials: { ...player.seenTutorials, [selectedGame]: true },
                   lastGame: selectedGame
                 });
+                setToast(gainedLabel);
+                window.setTimeout(() => setToast(""), 2600);
                 setScreen("score");
               }}
             >
@@ -976,18 +1189,109 @@ export function GamePrototype() {
         {screen === "score" && (
           <Frame step={8} title="Score" key="score">
             <div className="score-screen">
-              <div className="score-big"><PixelIcon type="star">★</PixelIcon><strong>+{games[player.lastGame || selectedGame].score}</strong><span>Nouveau total</span><b>★ {player.score.toLocaleString("fr-FR")}</b></div>
-              <div className="score-stat"><PixelIcon type="drumstick">◖</PixelIcon><span>{games[player.lastGame || selectedGame].stat}</span><b>{player.nuggets - 5} → {player.nuggets}</b></div>
-              <div className="score-stat"><span className="heart" /><span>Tentatives restantes</span><b>{"♥".repeat(player.attempts)}{"♡".repeat(3 - player.attempts)}</b></div>
+              <div className="score-big"><PixelIcon type="star">★</PixelIcon><strong>{formatStatGains(games[player.lastGame || selectedGame].statGains)}</strong><span>Nouveau total</span><b>★ {getWeeklyScore(player).toLocaleString("fr-FR")}</b></div>
+              <div className="score-stat score-pop"><PixelIcon type="drumstick">◖</PixelIcon><span>Rang actuel</span><b>#{currentRank}</b></div>
+              <div className="score-stat"><span className="heart" /><span>Defis du jour</span><b>{(Object.keys(games) as GameKey[]).filter((game) => isGameDoneToday(player, game)).length}/4</b></div>
               <div className="leader-card compact">
                 <h2>Classement</h2>
-                {leaderboard.map(([name, score], index) => (
-                  <p className={name === player.name ? "active" : ""} key={`${name}-${index}`}>
-                    <span>{index + 1} {name}</span>
-                    <b>★ {score.toLocaleString("fr-FR")}</b>
+                {leaderboard.slice(0, 5).map((rank, index) => (
+                  <p className={rank.isCurrent ? "active" : ""} key={`${rank.name}-${index}`}>
+                    <span>{index + 1} {rank.name}</span>
+                    <b>★ {rank.score.toLocaleString("fr-FR")}</b>
                   </p>
                 ))}
               </div>
+            </div>
+            <MainButton onClick={() => setScreen("hub")}>Retour au restaurant</MainButton>
+          </Frame>
+        )}
+
+        {screen === "leaderboard" && (
+          <Frame step={9} title="Classement" key="leaderboard">
+            <div className="meta-screen">
+              <div className="prize-banner">
+                <Trophy size={34} />
+                <span>Le premier samedi gagne 1 Baby Burger chez BUCK.</span>
+              </div>
+              <div className="leaderboard-list">
+                {leaderboard.map((rank, index) => (
+                  <article className={rank.isCurrent ? "is-current" : ""} key={`${rank.name}-${index}`}>
+                    <b>{index + 1}</b>
+                    <Avatar avatar={rank.avatar} size="tiny" />
+                    <span>{rank.name}</span>
+                    <strong>★ {rank.score.toLocaleString("fr-FR")}</strong>
+                    {rank.isCurrent && <em>toi</em>}
+                  </article>
+                ))}
+              </div>
+              <MetaNav onNavigate={setScreen} />
+            </div>
+            <MainButton onClick={() => setScreen("hub")}>Retour au restaurant</MainButton>
+          </Frame>
+        )}
+
+        {screen === "reward" && (
+          <Frame step={10} title="Recompense" key="reward">
+            <div className="meta-screen reward-screen">
+              <div className={isChampion ? "reward-card champion" : "reward-card"}>
+                <Gift size={48} />
+                <h2>Recompense du samedi</h2>
+                <p>Le premier du classement de la semaine gagne 1 Baby Burger.</p>
+                {isChampion ? (
+                  <>
+                    <strong>Tu es le champion de la semaine.</strong>
+                    <span>Presente cet ecran chez BUCK pour recuperer ton Baby Burger.</span>
+                  </>
+                ) : (
+                  <>
+                    <strong>Rang actuel : #{currentRank}</strong>
+                    <span>Si tu es champion, montre ton ecran a l'equipe BUCK.</span>
+                  </>
+                )}
+              </div>
+              <MetaNav onNavigate={setScreen} />
+            </div>
+            <MainButton onClick={() => setScreen("hub")}>Retour au restaurant</MainButton>
+          </Frame>
+        )}
+
+        {screen === "hallOfFame" && (
+          <Frame step={11} title="Hall of Fame" key="hallOfFame">
+            <div className="meta-screen">
+              <div className="fame-list">
+                {hallOfFameEntries.map((entry) => (
+                  <article key={entry.week}>
+                    <Medal size={30} />
+                    <span>Semaine {entry.week}</span>
+                    <strong>{entry.champion}</strong>
+                    <small>{entry.prize}</small>
+                  </article>
+                ))}
+              </div>
+              <MetaNav onNavigate={setScreen} />
+            </div>
+            <MainButton onClick={() => setScreen("hub")}>Retour au restaurant</MainButton>
+          </Frame>
+        )}
+
+        {screen === "profile" && (
+          <Frame step={12} title="Profil" key="profile">
+            <div className="meta-screen profile-screen">
+              <div className="profile-card">
+                <Avatar avatar={player.avatar} size="large" />
+                <div>
+                  <h2>{player.name || "PouletMaster"}</h2>
+                  <strong>★ {getWeeklyScore(player).toLocaleString("fr-FR")}</strong>
+                  <span>Rang #{currentRank}</span>
+                </div>
+              </div>
+              <StatBars stats={player.weeklyStats} />
+              <div className="history-grid">
+                <article><Crown size={24} /><span>Semaines</span><b>{player.history.weeksPlayed}</b></article>
+                <article><Trophy size={24} /><span>Victoires</span><b>{player.history.victories}</b></article>
+                <article><BarChart3 size={24} /><span>Mini-jeux</span><b>{player.history.totalGamesPlayed}</b></article>
+              </div>
+              <MetaNav onNavigate={setScreen} />
             </div>
             <MainButton onClick={() => setScreen("hub")}>Retour au restaurant</MainButton>
           </Frame>

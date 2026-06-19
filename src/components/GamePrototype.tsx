@@ -815,7 +815,6 @@ export function GamePrototype() {
   useEffect(() => {
     const saved = readPlayer();
     setPlayer(saved);
-    if (saved.name) setScreen("hub");
   }, []);
 
   function updatePlayer(next: PlayerState) {
@@ -955,19 +954,32 @@ export function GamePrototype() {
         {screen === "welcome" && (
           <Frame step={1} title="Accueil" className="welcome-frame" key="welcome">
             <div className="store-scene">
-              <div className="shop-lamps"><span /><span /></div>
-              <div className="shop-sign">
-                <span className="sign-bird" />
-                <strong>Wake up</strong>
-                <em>to ketchup</em>
-                <small>Restaurant</small>
-              </div>
-              <div className="brand-logo-card">
+              <div className="poster-logo">
                 <img src="/assets/buck-and-more-logo-transparent.png" alt="Buck & More" />
               </div>
-              <MainButton className="blue-button" onClick={() => setScreen(player.name ? "hub" : "name")}>
+              <div className="poster-title" aria-label="Wake up to ketchup">
+                <strong>Wake up</strong>
+                <span><i />to<i /></span>
+                <em>Ketchup</em>
+              </div>
+              <div className="poster-food food-salad"><span /></div>
+              <div className="poster-food food-noodles"><span /></div>
+              <div className="poster-food food-square"><span /></div>
+              <div className="poster-food food-wings"><span /></div>
+              <div className="poster-food food-fries"><span /></div>
+              <div className="poster-food food-burger"><span /></div>
+              <div className="poster-food food-sauce"><span /></div>
+              <div className="poster-food food-dip"><span /></div>
+              <div className="poster-avatar">
+                <Avatar avatar={player.avatar} size="large" />
+              </div>
+              <div className="poster-sparkles" aria-hidden="true">
+                {Array.from({ length: 18 }).map((_, index) => <span key={index} />)}
+              </div>
+              <button className="main-button poster-button" type="button" onClick={() => setScreen(player.name ? "hub" : "name")}>
                 {player.name ? "Continuer" : "Commencer"}
-              </MainButton>
+              </button>
+              <p className="tap-hint">{player.name ? "Retour au resto" : "Tap to wake up"}</p>
             </div>
           </Frame>
         )}
@@ -981,7 +993,7 @@ export function GamePrototype() {
                 const data = new FormData(event.currentTarget);
                 const name = String(data.get("name") || "PouletMaster").trim().replace(/\s+/g, "");
                 updatePlayer({ ...player, name: name || "PouletMaster" });
-                setScreen("rules");
+                setScreen("hub");
               }}
             >
               <Avatar avatar={player.avatar} size="tiny" />

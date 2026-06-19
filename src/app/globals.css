@@ -213,109 +213,337 @@ button {
 
 .store-scene {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0;
-  padding: 18px 22px calc(var(--primary-button-height) + var(--primary-button-bottom) + 24px);
-  background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.08) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(#bd9a63, #8d5f38 53%, #4d2c1b 53%);
-  position: relative;
-}
-
-.shop-lamps {
-  position: absolute;
-  top: 44px;
-  left: 26px;
-  right: 26px;
-  display: flex;
-  justify-content: space-between;
-}
-
-.shop-lamps span {
-  width: 28px;
-  height: 38px;
-  background: #17100d;
-  border-radius: 0 0 18px 18px;
-  box-shadow: 0 20px 28px rgba(255, 196, 78, 0.36);
-}
-
-.shop-sign {
-  width: 86%;
-  min-height: 170px;
-  display: grid;
-  place-items: center;
-  justify-items: center;
-  gap: 4px;
-  margin-top: clamp(96px, 15svh, 150px);
-  padding: 20px 18px 14px;
-  border: 6px solid #23130b;
-  border-radius: 32px;
-  background: radial-gradient(circle at 50% 15%, #8b552c, #4d2c1b);
-  box-shadow: inset 0 0 0 5px #a16433, 0 10px 0 #21140d;
-  text-transform: uppercase;
-  position: relative;
-  text-align: center;
-}
-
-.sign-bird {
-  width: 42px;
-  height: 42px;
-  background: #f9d18d;
-  border: 4px solid #21140d;
-  border-radius: 45% 50% 35% 55%;
-  position: absolute;
-  top: -18px;
-}
-
-.shop-sign strong {
   display: block;
-  width: 100%;
-  font-size: clamp(26px, 8vw, 40px);
-  color: #ff8a3d;
-  text-shadow: 4px 4px 0 #5a2113, -2px -2px 0 #ffd08b;
-}
-
-.shop-sign em {
-  display: block;
-  width: 100%;
-  font-size: clamp(15px, 4.5vw, 22px);
-  color: #ffe0a6;
-  font-style: normal;
-}
-
-.shop-sign small {
-  display: block;
-  padding: 8px 18px;
-  color: #ffe9b8;
-  background: var(--green);
-  border: 4px solid #1c2c0e;
-  box-shadow: 3px 3px 0 #000;
-}
-
-.brand-logo-card {
-  width: min(88%, 372px);
-  min-height: 68px;
-  display: grid;
-  place-items: center;
-  margin-top: clamp(18px, 3svh, 30px);
   padding: 0;
-  border: 0;
-  background: transparent;
+  background:
+    radial-gradient(circle at 50% 54%, rgba(255, 130, 43, 0.52), transparent 21%),
+    repeating-conic-gradient(from -8deg at 50% 56%, rgba(255, 155, 50, 0.16) 0 8deg, transparent 8deg 18deg),
+    radial-gradient(circle at 50% 40%, #5b2a18 0 20%, #31170f 58%, #170c08 100%);
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.brand-logo-card img {
+.poster-logo {
+  position: absolute;
+  top: clamp(12px, 2.2svh, 22px);
+  left: 50%;
+  z-index: 3;
+  width: min(78%, 330px);
+  translate: -50% 0;
+}
+
+.poster-logo img {
   display: block;
   width: 100%;
   height: auto;
   image-rendering: auto;
-  filter: drop-shadow(0 6px 0 rgba(24, 13, 8, 0.45));
+  filter: drop-shadow(0 7px 0 #140905) drop-shadow(0 0 18px rgba(255, 77, 34, 0.26));
+}
+
+.poster-title {
+  position: absolute;
+  top: clamp(104px, 16svh, 136px);
+  left: 50%;
+  z-index: 4;
+  width: min(92%, 390px);
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  translate: -50% 0;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.poster-title strong,
+.poster-title em {
+  line-height: 0.9;
+  letter-spacing: 0;
+  text-shadow:
+    0 5px 0 #0f0705,
+    4px 4px 0 #0f0705,
+    -3px 0 0 #0f0705,
+    3px 0 0 #0f0705;
+}
+
+.poster-title strong {
+  color: #ffe6bd;
+  font-size: clamp(42px, 13vw, 67px);
+}
+
+.poster-title em {
+  color: #e94a26;
+  font-style: normal;
+  font-size: clamp(42px, 13vw, 68px);
+}
+
+.poster-title span {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 9px;
+  color: #ffbf32;
+  font-size: clamp(24px, 7vw, 36px);
+  text-shadow: 3px 3px 0 #0f0705;
+}
+
+.poster-title span i {
+  width: clamp(56px, 18vw, 90px);
+  height: 8px;
+  background: #ffbf32;
+  border: 3px solid #1b0c06;
+  box-shadow: 3px 3px 0 #0f0705;
+}
+
+.poster-avatar {
+  position: absolute;
+  left: 50%;
+  top: clamp(400px, 57svh, 488px);
+  z-index: 6;
+  width: 172px;
+  height: 222px;
+  display: grid;
+  place-items: center;
+  translate: -50% -50%;
+  filter: drop-shadow(8px 12px 0 rgba(0, 0, 0, 0.36));
+}
+
+.poster-avatar .avatar-large {
+  --unit: 1.9px;
+}
+
+.poster-food {
+  position: absolute;
+  z-index: 5;
+  width: clamp(70px, 21vw, 102px);
+  aspect-ratio: 1.22;
+  display: grid;
+  place-items: center;
+  transform: rotate(var(--tilt, 0deg));
+  filter: drop-shadow(7px 9px 0 rgba(0, 0, 0, 0.36));
+}
+
+.poster-food::before {
+  content: "";
+  position: absolute;
+  inset: 14% 4% 8%;
+  border: 4px solid #264b2e;
+  border-radius: 50%;
+  background: #fff0c8;
+  box-shadow: inset 0 0 0 4px #cfbd86;
+}
+
+.poster-food span,
+.poster-food span::before,
+.poster-food span::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+}
+
+.food-salad {
+  --tilt: -8deg;
+  left: 8%;
+  top: clamp(276px, 38svh, 338px);
+}
+
+.food-salad span {
+  width: 54%;
+  height: 44%;
+  border-radius: 46%;
+  background:
+    radial-gradient(circle at 25% 35%, #dfe983 0 9%, transparent 10%),
+    radial-gradient(circle at 62% 28%, #f2d86b 0 8%, transparent 9%),
+    radial-gradient(circle at 58% 66%, #e9e47b 0 8%, transparent 9%),
+    #78a941;
+}
+
+.food-noodles {
+  --tilt: 5deg;
+  left: 40%;
+  top: clamp(280px, 39svh, 342px);
+}
+
+.food-noodles span {
+  width: 58%;
+  height: 42%;
+  border-radius: 44%;
+  background:
+    repeating-linear-gradient(25deg, #e97922 0 5px, #f3bd45 5px 9px, #6b2d16 9px 12px);
+}
+
+.food-square {
+  --tilt: 8deg;
+  right: 7%;
+  top: clamp(296px, 41svh, 360px);
+}
+
+.food-square span {
+  width: 58%;
+  height: 44%;
+  background:
+    linear-gradient(#ba6a28 0 28%, #f3d58d 28% 58%, #8c4a22 58% 72%, #f5d389 72%);
+  border: 3px solid #6a351e;
+  box-shadow: inset 0 0 0 4px rgba(255, 237, 174, 0.22);
+}
+
+.food-wings {
+  --tilt: -12deg;
+  left: 8%;
+  top: clamp(398px, 53svh, 464px);
+}
+
+.food-wings span {
+  width: 54%;
+  height: 18%;
+  border-radius: 20px;
+  background: #b85b1d;
+  box-shadow:
+    12px -12px 0 #cf6f22,
+    27px 2px 0 #9f4718,
+    -10px 11px 0 #d77f2b;
+}
+
+.food-fries {
+  --tilt: 9deg;
+  right: 7%;
+  top: clamp(398px, 53svh, 464px);
+}
+
+.food-fries span {
+  width: 64%;
+  height: 52%;
+  border-radius: 50%;
+  background:
+    linear-gradient(25deg, transparent 0 30%, #f1bd36 30% 36%, transparent 36%),
+    linear-gradient(-18deg, transparent 0 36%, #f5ce49 36% 42%, transparent 42%),
+    radial-gradient(circle at 60% 58%, #75a33b 0 18%, #8b4a1d 19% 35%, transparent 36%),
+    #d97922;
+}
+
+.food-burger {
+  --tilt: -5deg;
+  left: 10%;
+  top: clamp(550px, 70svh, 610px);
+}
+
+.food-burger span {
+  width: 62%;
+  height: 46%;
+  border-radius: 22px 22px 12px 12px;
+  background: linear-gradient(#c97928 0 34%, #f1cf6c 34% 46%, #5b8d3f 46% 58%, #6b321b 58% 74%, #d49236 74%);
+  border: 3px solid #6b351d;
+}
+
+.food-sauce {
+  --tilt: 8deg;
+  right: 7%;
+  top: clamp(560px, 71svh, 626px);
+}
+
+.food-sauce span {
+  width: 24%;
+  height: 28%;
+  border-radius: 50%;
+  background: #9a3c1c;
+  box-shadow:
+    -30px -5px 0 #e3b35a,
+    -54px -3px 0 #e3b35a,
+    -18px 20px 0 #6f2b18;
+}
+
+.food-dip {
+  --tilt: -6deg;
+  left: 38%;
+  top: clamp(660px, 82svh, 704px);
+}
+
+.food-dip span {
+  width: 60%;
+  height: 38%;
+  border-radius: 50%;
+  background: repeating-linear-gradient(22deg, #db7a22 0 6px, #f2c14c 6px 10px, #7b3418 10px 13px);
+}
+
+.poster-sparkles span {
+  position: absolute;
+  z-index: 2;
+  width: 13px;
+  height: 13px;
+  color: #ffc337;
+}
+
+.poster-sparkles span::before,
+.poster-sparkles span::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+}
+
+.poster-sparkles span::before {
+  left: 5px;
+  top: 0;
+  width: 4px;
+  height: 13px;
+}
+
+.poster-sparkles span::after {
+  left: 0;
+  top: 5px;
+  width: 13px;
+  height: 4px;
+}
+
+.poster-sparkles span:nth-child(1) { left: 6%; top: 30%; }
+.poster-sparkles span:nth-child(2) { left: 30%; top: 32%; }
+.poster-sparkles span:nth-child(3) { right: 8%; top: 35%; }
+.poster-sparkles span:nth-child(4) { left: 20%; top: 43%; }
+.poster-sparkles span:nth-child(5) { right: 24%; top: 45%; }
+.poster-sparkles span:nth-child(6) { left: 5%; top: 54%; }
+.poster-sparkles span:nth-child(7) { right: 7%; top: 56%; }
+.poster-sparkles span:nth-child(8) { left: 28%; top: 61%; }
+.poster-sparkles span:nth-child(9) { right: 33%; top: 63%; }
+.poster-sparkles span:nth-child(10) { left: 7%; top: 73%; }
+.poster-sparkles span:nth-child(11) { right: 14%; top: 75%; }
+.poster-sparkles span:nth-child(12) { left: 25%; top: 84%; }
+.poster-sparkles span:nth-child(13) { right: 28%; top: 86%; }
+.poster-sparkles span:nth-child(14) { left: 47%; top: 35%; }
+.poster-sparkles span:nth-child(15) { right: 42%; top: 51%; }
+.poster-sparkles span:nth-child(16) { left: 43%; top: 69%; }
+.poster-sparkles span:nth-child(17) { right: 5%; top: 26%; }
+.poster-sparkles span:nth-child(18) { left: 4%; top: 88%; }
+
+.tap-hint {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(10px, 2.2svh, 24px);
+  z-index: 8;
+  margin: 0;
+  translate: -50% 0;
+  color: rgba(255, 150, 92, 0.58);
+  text-transform: uppercase;
+  text-align: center;
+  font-size: clamp(10px, 3vw, 15px);
+  text-shadow: 3px 3px 0 #0c0503;
+  white-space: nowrap;
 }
 
 .welcome-frame .main-button {
   font-size: clamp(18px, 5vw, 26px);
+}
+
+.welcome-frame .main-button.poster-button {
+  bottom: clamp(58px, 8svh, 78px);
+  min-height: clamp(66px, 9svh, 82px);
+  width: min(calc(100% - 86px), 310px);
+  color: #1a120b;
+  background: linear-gradient(#ffd760, #ef9d2f);
+  text-shadow: 2px 2px 0 rgba(255, 240, 176, 0.64);
+  box-shadow:
+    inset 0 0 0 4px #ffe68a,
+    inset 0 -10px 0 rgba(128, 62, 22, 0.22),
+    7px 7px 0 #0b0704;
+  animation: posterButton 1.45s steps(2, end) infinite;
 }
 
 .name-screen {
@@ -1340,6 +1568,13 @@ button {
 @keyframes championGlow {
   50% {
     filter: brightness(1.12);
+  }
+}
+
+@keyframes posterButton {
+  50% {
+    transform: translateY(-3px);
+    filter: brightness(1.08);
   }
 }
 
